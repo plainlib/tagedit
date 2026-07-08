@@ -2,15 +2,15 @@
 <CONFIG>
   <Package Version="5">
     <PathDelim Value="\"/>
-    <Name Value="TagEditPackage"/>
+    <Name Value="tageditpackage"/>
     <Type Value="RunAndDesignTime"/>
-    <Author Value="Alexander Tverskoy"/>
+    <Author Value="Alexander Tverskoy (astverskoy@gmail.com)"/>
     <CompilerOptions>
       <Version Value="11"/>
       <PathDelim Value="\"/>
       <SearchPaths>
-        <IncludeFiles Value="..\src"/>
-        <OtherUnitFiles Value="..\src"/>
+        <IncludeFiles Value="src"/>
+        <OtherUnitFiles Value="src"/>
         <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
       <Other>
@@ -44,24 +44,24 @@ SOFTWARE."/>
     <Version Major="1" Minor="3"/>
     <Files>
       <Item>
-        <Filename Value="..\src\TagEdit.pas"/>
+        <Filename Value="src\TagEdit.pas"/>
         <UnitName Value="TagEdit"/>
       </Item>
       <Item>
-        <Filename Value="..\src\TagEditRegister.lrs"/>
+        <Filename Value="src\TagEditRegister.lrs"/>
         <Type Value="LRS"/>
       </Item>
       <Item>
-        <Filename Value="..\src\TagEditRegister.pas"/>
+        <Filename Value="src\TagEditRegister.pas"/>
         <HasRegisterProc Value="True"/>
         <UnitName Value="TagEditRegister"/>
       </Item>
       <Item>
-        <Filename Value="..\src\TagColorItems.pas"/>
+        <Filename Value="src\TagColorItems.pas"/>
         <UnitName Value="TagColorItems"/>
       </Item>
       <Item>
-        <Filename Value="..\src\TagCheckPopup.pas"/>
+        <Filename Value="src\TagCheckPopup.pas"/>
         <UnitName Value="TagCheckPopup"/>
       </Item>
     </Files>

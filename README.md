@@ -6,7 +6,7 @@ A versatile tag management control for Lazarus/FPC with advanced features.
 [![Build with: Lazarus](https://img.shields.io/badge/Build_with-Lazarus-blueviolet)](https://www.lazarus-ide.org/)
 [![Platform: Windows Linux](https://img.shields.io/badge/Platform-Windows_Linux-yellow)](#)
 
-![sample](TagEditSample.png)
+![sample](samples/TagEditSample.png)
 
 ## Features
 
@@ -64,7 +64,7 @@ A versatile tag management control for Lazarus/FPC with advanced features.
   - Customizable selection colors
   - Batch operations on selected tags
 
-![sample](TagEditSample2.png)
+![sample](samples/TagEditSample2.png)
 
 - **📋 Suggestions & Checklist**
   - Built-in checklist popup for tag selection
@@ -75,7 +75,7 @@ A versatile tag management control for Lazarus/FPC with advanced features.
   - Flexible positioning (under edit box or control)
   - Bulk tag operations from checklist
 
-![sample](TagEditSample3.png)
+![sample](samples/TagEditSample3.png)
 
 ## Properties
 

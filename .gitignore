@@ -1,8 +1,10 @@
 *.exe
+*.dll
 *.res
 *.lps
 *.dbg
 *.msi
 *.mo
 *.tar.gz
-packages/lib
+*.zip
+**/lib/
