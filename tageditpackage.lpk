@@ -53,21 +53,17 @@ SOFTWARE."/>
         <UnitName Value="TagEdit"/>
       </Item>
       <Item>
-        <Filename Value="src\TagEditRegister.lrs"/>
-        <Type Value="LRS"/>
-      </Item>
-      <Item>
-        <Filename Value="src\TagEditRegister.pas"/>
-        <HasRegisterProc Value="True"/>
-        <UnitName Value="TagEditRegister"/>
-      </Item>
-      <Item>
         <Filename Value="src\TagColorItems.pas"/>
         <UnitName Value="TagColorItems"/>
       </Item>
       <Item>
         <Filename Value="src\TagCheckPopup.pas"/>
         <UnitName Value="TagCheckPopup"/>
+      </Item>
+      <Item>
+        <Filename Value="src\TagEditRegister.pas"/>
+        <HasRegisterProc Value="True"/>
+        <UnitName Value="TagEditRegister"/>
       </Item>
     </Files>
     <RequiredPkgs>
