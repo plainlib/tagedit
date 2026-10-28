@@ -2,13 +2,13 @@
   This source is only used to compile and install the package.
  }
 
-unit TagEditPackage;
+unit tageditpackage;
 
 {$warn 5023 off : no warning about unused units}
 interface
 
 uses
-  TagEdit, TagEditRegister, TagColorItems, TagCheckPopup, LazarusPackageIntf;
+  TagEdit, TagColorItems, TagCheckPopup, TagEditRegister, LazarusPackageIntf;
 
 implementation
 
@@ -18,5 +18,5 @@ begin
 end;
 
 initialization
-  RegisterPackage('TagEditPackage', @Register);
+  RegisterPackage('tageditpackage', @Register);
 end.
