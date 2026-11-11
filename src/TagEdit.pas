@@ -775,7 +775,8 @@ begin
   FUpdatingEdit := True;
   try
     // Determine suggestion button visibility first
-    if (not FEdit.Visible) or (FSuggestedTags.Count = 0) then
+    // Button visibility depends on editf ability, not on transient edit hiding during selection
+    if (not FEnabled) or FReadOnly or (FSuggestedTags.Count = 0) then
     begin
       FCheckListButton.Width := 0;
       FCheckListButton.Visible := False;
@@ -1788,6 +1789,14 @@ begin
   GlobalPos := FEdit.ClientToScreen(Point(X, Y));
   GlobalPos := Self.ScreenToClient(GlobalPos);
 
+  // A tag drag is pending or active - forward movement to the parent instead of
+  // starting a selection, so the drop indicator keeps updating and the edit box stays visible
+  if FDragging or (FMouseDownIndex >= 0) then
+  begin
+    MouseMove(Shift, GlobalPos.X, GlobalPos.Y);
+    Exit;
+  end;
+
   // Check if we should start selection (mouse moved with button pressed beyond threshold)
   if (FAllowSelect) and (ssLeft in Shift) and (FMouseDownPos.X <> -1) then
   begin
@@ -2491,7 +2500,7 @@ begin
   SetLength(FTagRects, FTags.Count);
 
   // Shift the first row when the button is on the left
-  if (FSuggestionButtonPosition = sbpLeft) and FEdit.Visible and (FSuggestedTags.Count > 0) then
+  if (FSuggestionButtonPosition = sbpLeft) and FEnabled and (not FReadOnly) and (FSuggestedTags.Count > 0) then
     FirstRowOffset := Scale(30) + Scale(4)
   else
     FirstRowOffset := 0;
