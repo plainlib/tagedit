@@ -391,8 +391,13 @@ begin
   FTagColors := TTagColorItems.Create(Self);
 
   FTags := TStringList.Create;
-  FTags.Add('IDE:Lazarus');
-  FTags.Add('Free Pascal');
+  // Add demo tags only at design time so that the cleared state
+  // persists when the form is loaded at runtime
+  if csDesigning in ComponentState then
+  begin
+    FTags.Add('IDE:Lazarus');
+    FTags.Add('Free Pascal');
+  end;
   FTags.CaseSensitive := True;
   FTags.UseLocale := True;
   FTags.Options := [soUseLocale];
