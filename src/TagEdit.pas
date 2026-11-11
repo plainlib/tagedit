@@ -29,6 +29,7 @@ uses
 
 type
   TTagEditOperation = (teoAdd, teoRemove, teoDrag, teoEdit, teoCheckListBulkChange);
+  TSuggestionButtonPosition = (sbpRight, sbpLeft);
 
 type
   TTagEvent = procedure(Sender: TObject; const TagText: string; const TagIndex: integer = -1) of object;
@@ -71,6 +72,7 @@ type
     FEnabled: boolean;
     FUpdatePopup: boolean;
     FSuggestedUnderEdit: boolean;
+    FSuggestionButtonPosition: TSuggestionButtonPosition;
 
     FAutoColorBrigtness: integer;
     FAutoColorSaturation: integer;
@@ -139,6 +141,8 @@ type
     procedure SetSuggestedButtonGlyph(AValue: TBitmap);
     procedure SetSuggestedButtonCaption(const AValue: string);
     procedure SetSuggestedUnderEdit(Value: boolean);
+    procedure SetSuggestionButtonPosition(Value: TSuggestionButtonPosition);
+    procedure UpdateSuggestionButtonAttachment;
 
     function RemovalConfirmed(idx: integer = -1): boolean;
     function TagAtPos(const P: TPoint): integer;
@@ -160,7 +164,8 @@ type
     procedure DrawTags;
     procedure DrawTagsToCanvas(const ATags: TStringList; ACanvas: TCanvas; ATagHeight: integer;
       AAvailWidth: integer; AHoverIndex: integer = -1; AShowCloseButtons: boolean = True; var ATagRects: array of TRect;
-      AFontSize: integer = -1; AIndent: integer = 4; ABlend: integer = 0; ABlendColor: TColor = clNone; ADrawSelection: boolean = True);
+      AFontSize: integer = -1; AIndent: integer = 4; ABlend: integer = 0; ABlendColor: TColor = clNone;
+      ADrawSelection: boolean = True; AFirstRowOffset: integer = 0);
   protected
     procedure SetEnabled(Value: boolean); override;
     procedure SetParent(AParent: TWinControl); override;
@@ -229,6 +234,8 @@ type
     property SuggestedButtonGlyph: TBitmap read GetSuggestedButtonGlyph write SetSuggestedButtonGlyph;
     property SuggestedButtonCaption: string read FSuggestedButtonCaption write SetSuggestedButtonCaption;
     property SuggestedUnderEdit: boolean read FSuggestedUnderEdit write SetSuggestedUnderEdit default True;
+    property SuggestionButtonPosition: TSuggestionButtonPosition read FSuggestionButtonPosition
+      write SetSuggestionButtonPosition default sbpRight;
     property SelectionColor: TColor read FSelectionColor write SetSelectionColor default clHighlight;
     property SelectionRectColor: TColor read FSelectionRectColor write FSelectionRectColor default clHighlight;
     property SelectionRectPenStyle: TPenStyle read FSelectionRectPenStyle write FSelectionRectPenStyle default psDash;
@@ -341,6 +348,7 @@ type
     property SuggestedButtonCaption;
     property SuggestedButtonGlyph;
     property SuggestedUnderEdit;
+    property SuggestionButtonPosition;
     property Items;
     // events
     property OnTagClick;
@@ -411,6 +419,7 @@ begin
   FSuggestedTags.OnChange := @SuggestedChanged;
   FSuggestedButtonCaption := '...';
   FSuggestedUnderEdit := True;
+  FSuggestionButtonPosition := sbpRight;
 
   Height := Scale(32);
   Width := Scale(300);
@@ -473,10 +482,7 @@ begin
     FCheckListButton.Visible := False;
     FCheckListButton.MultiSelect := True;
     FCheckListButton.DropDownCount := 15;
-    if FSuggestedUnderEdit then
-      FCheckListButton.AttachedControl := FEdit
-    else
-      FCheckListButton.AttachedControl := Self;
+    UpdateSuggestionButtonAttachment;
     FCheckListButton.OnClick := @CheckListClick;
     FCheckListButton.OnItemChecked := @CheckListItemChecked;
     FCheckListButton.OnBeforeBulkChange := @CheckListBeforeBulkChange;
@@ -703,15 +709,35 @@ end;
 procedure TCustomTagEdit.SetSuggestedUnderEdit(Value: boolean);
 begin
   FSuggestedUnderEdit := Value;
-  if FSuggestedUnderEdit then
+  UpdateSuggestionButtonAttachment;
+end;
+
+procedure TCustomTagEdit.SetSuggestionButtonPosition(Value: TSuggestionButtonPosition);
+begin
+  if FSuggestionButtonPosition <> Value then
   begin
-    FCheckListButton.AttachedControl := FEdit;
-    FCheckListButton.PopupWidthIncludeSelf := True;
-  end
-  else
+    FSuggestionButtonPosition := Value;
+    UpdateSuggestionButtonAttachment;
+    UpdateEditPosition;
+    Invalidate;
+  end;
+end;
+
+procedure TCustomTagEdit.UpdateSuggestionButtonAttachment;
+begin
+  if not Assigned(FCheckListButton) then
+    Exit;
+
+  // Attach popup to the whole control when the button is on the left
+  if (FSuggestionButtonPosition = sbpLeft) or (not FSuggestedUnderEdit) then
   begin
     FCheckListButton.AttachedControl := Self;
     FCheckListButton.PopupWidthIncludeSelf := False;
+  end
+  else
+  begin
+    FCheckListButton.AttachedControl := FEdit;
+    FCheckListButton.PopupWidthIncludeSelf := True;
   end;
   FCheckListButton.UpdatePopupForm;
 end;
@@ -736,15 +762,38 @@ var
   LastRect: TRect;
   NewLeft, NewTop, NewTopScaled, OldTop: integer;
   AvailWidth: integer;
+  ButtonOffset: integer;
+  ButtonsOnLeft: boolean;
 begin
   if FUpdatingEdit or (csDesigning in ComponentState) then Exit;
 
   FUpdatingEdit := True;
   try
+    // Determine suggestion button visibility first
+    if (not FEdit.Visible) or (FSuggestedTags.Count = 0) then
+    begin
+      FCheckListButton.Width := 0;
+      FCheckListButton.Visible := False;
+    end
+    else
+    begin
+      if not FCheckListButton.Visible then
+      begin
+        FCheckListButton.Width := Scale(30);
+        FCheckListButton.Visible := True;
+      end;
+    end;
+
     // Calculate available width considering borders
     AvailWidth := ClientWidth - FBorderWidth - Scale(8);
     if FBorderWidth > 0 then
       Dec(AvailWidth, 2 * FBorderWidth);
+
+    ButtonsOnLeft := (FSuggestionButtonPosition = sbpLeft) and FCheckListButton.Visible;
+    if ButtonsOnLeft then
+      ButtonOffset := FCheckListButton.Width + Scale(4)
+    else
+      ButtonOffset := 0;
 
     if FTags.Count > 0 then
     begin
@@ -766,7 +815,8 @@ begin
     end
     else
     begin
-      NewLeft := Scale(4);
+      // No tags - place edit after the button if it is on the left
+      NewLeft := Scale(4) + ButtonOffset;
       NewTop := Scale(4);
     end;
 
@@ -787,32 +837,39 @@ begin
         FUpdatePopup := True;
     end;
 
-    if (not FEdit.Visible) or (FSuggestedTags.Count = 0) then
+    // Set Edit width - do not reserve space for the button when it is on the left
+    if ButtonsOnLeft then
+      FEdit.Width := ClientWidth - FBorderWidth - FEdit.Left - Scale(4)
+    else
+      FEdit.Width := ClientWidth - FBorderWidth - FEdit.Left - FCheckListButton.Width - Scale(4);
+    if ButtonsOnLeft then
     begin
-      FCheckListButton.Width := 0;
-      FCheckListButton.Visible := False;
+      if FEdit.Width < FEditMinWidth then
+        FEdit.Width := FEditMinWidth;
     end
     else
     begin
-      if not FCheckListButton.Visible then
-      begin
-        FCheckListButton.Width := Scale(30);
-        FCheckListButton.Visible := True;
-      end;
+      if FEdit.Width < FEditMinWidth - FCheckListButton.Width then
+        FEdit.Width := FEditMinWidth - FCheckListButton.Width;
     end;
-
-    // Set Edit width
-    FEdit.Width := ClientWidth - FBorderWidth - FEdit.Left - FCheckListButton.Width - Scale(4);
-    if FEdit.Width < FEditMinWidth - FCheckListButton.Width then
-      FEdit.Width := FEditMinWidth - FCheckListButton.Width;
     FEdit.Height := GetTagHeight - Scale(2);
 
-    // Set CheckListButton
-    if (FSuggestedTags.Count > 0) then
+    // Position CheckListButton
+    if (FSuggestedTags.Count > 0) and FCheckListButton.Visible then
     begin
-      FCheckListButton.Left := FEdit.Left + FEdit.Width;
-      FCheckListButton.Top := FEdit.Top;
-      FCheckListButton.Height := FEdit.Height;
+      if FSuggestionButtonPosition = sbpLeft then
+      begin
+        // Left position - button sits before tags on the first row
+        FCheckListButton.Left := FBorderWidth + Scale(4);
+        FCheckListButton.Top := FBorderWidth + Scale(4);
+        FCheckListButton.Height := GetTagHeight;
+      end
+      else
+      begin
+        FCheckListButton.Left := FEdit.Left + FEdit.Width;
+        FCheckListButton.Top := FEdit.Top;
+        FCheckListButton.Height := FEdit.Height;
+      end;
     end;
   finally
     FUpdatingEdit := False;
@@ -1212,6 +1269,7 @@ var
   AvailWidth: integer;
   LastRect: TRect;
   EditBottom: integer;
+  FirstRowOffset: integer;
 begin
   LastRect := Rect(0, 0, 0, 0);
   if FTags.Count = 0 then
@@ -1231,7 +1289,12 @@ begin
   Canvas.Font.Assign(Font);
   H := GetTagHeight;
 
-  X := Scale(4) + FBorderWidth;
+  if (FSuggestionButtonPosition = sbpLeft) and FEdit.Visible and (FSuggestedTags.Count > 0) then
+    FirstRowOffset := Scale(30) + Scale(4)
+  else
+    FirstRowOffset := 0;
+
+  X := Scale(4) + FBorderWidth + FirstRowOffset;
   Y := Scale(4) + FBorderWidth;
 
   // Simulate tag layout to find bottom position
@@ -2412,6 +2475,7 @@ end;
 procedure TCustomTagEdit.DrawTags;
 var
   AvailWidth: integer;
+  FirstRowOffset: integer;
 begin
   // Calculate available width considering borders
   AvailWidth := ClientWidth - Scale(8);
@@ -2421,7 +2485,14 @@ begin
   // Initialize FTagRects array
   SetLength(FTagRects, FTags.Count);
 
-  DrawTagsToCanvas(FTags, Canvas, GetTagHeight, AvailWidth, FHoverIndex, FCloseButtons, FTagRects);
+  // Shift the first row when the button is on the left
+  if (FSuggestionButtonPosition = sbpLeft) and FEdit.Visible and (FSuggestedTags.Count > 0) then
+    FirstRowOffset := Scale(30) + Scale(4)
+  else
+    FirstRowOffset := 0;
+
+  DrawTagsToCanvas(FTags, Canvas, GetTagHeight, AvailWidth, FHoverIndex, FCloseButtons, FTagRects, -1,
+    4, 0, clNone, True, FirstRowOffset);
 
   if not (csDesigning in ComponentState) then
     UpdateEditPosition;
@@ -2429,7 +2500,8 @@ end;
 
 procedure TCustomTagEdit.DrawTagsToCanvas(const ATags: TStringList; ACanvas: TCanvas; ATagHeight: integer;
   AAvailWidth: integer; AHoverIndex: integer = -1; AShowCloseButtons: boolean = True; var ATagRects: array of TRect;
-  AFontSize: integer = -1; AIndent: integer = 4; ABlend: integer = 0; ABlendColor: TColor = clNone; ADrawSelection: boolean = True);
+  AFontSize: integer = -1; AIndent: integer = 4; ABlend: integer = 0; ABlendColor: TColor = clNone;
+  ADrawSelection: boolean = True; AFirstRowOffset: integer = 0);
 var
   i: integer;
   R: TRect;
@@ -2452,7 +2524,8 @@ begin
   if Length(ATagRects) <> ATags.Count then
     Exit;
 
-  X := Scale(AIndent) + FBorderWidth;
+  // First row may be shifted to the right to make room for the button
+  X := Scale(AIndent) + FBorderWidth + AFirstRowOffset;
   Y := Scale(AIndent) + FBorderWidth;
   H := ATagHeight;
 
